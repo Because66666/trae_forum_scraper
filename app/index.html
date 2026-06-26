@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6eadb">
+  <link rel="preconnect" href="https://code.iconify.design">
+  <title>Project Drift · TRAE Demo Feed</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#feed">跳到项目内容</a>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+  <main class="shell">
+    <section class="phone-frame" aria-label="项目推荐流">
+      <div class="topbar">
+        <button id="resetBtn" class="icon-btn ghost-btn" type="button" aria-label="重置偏好" title="重置偏好">
+          <iconify-icon icon="line-md:rotate-270" aria-hidden="true"></iconify-icon>
+        </button>
+      </div>
+      <div id="feed" class="feed" tabindex="0" aria-live="polite"></div>
+      <div class="bottom-actions">
+        <button id="prevBtn" class="icon-btn nav-btn" type="button" aria-label="上一条" title="上一条">
+          <iconify-icon icon="line-md:arrow-up" aria-hidden="true"></iconify-icon>
+        </button>
+        <button id="nextBtn" class="icon-btn nav-btn primary" type="button" aria-label="下一条" title="下一条">
+          <iconify-icon icon="line-md:arrow-down" aria-hidden="true"></iconify-icon>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <template id="postTemplate">
+    <article class="post-card">
+      <div class="image-stage"></div>
+      <div class="scrim"></div>
+      <div class="content-stack">
+        <div class="tag-row"></div>
+        <h2></h2>
+        <p class="meta"></p>
+        <p class="summary"></p>
+        <div class="stat-row"></div>
+      </div>
+      <div class="action-rail">
+        <a class="open-link icon-btn" target="_blank" rel="noopener noreferrer" aria-label="查看详情" title="查看详情">
+          <iconify-icon icon="line-md:external-link" aria-hidden="true"></iconify-icon>
+        </a>
+        <button class="interest-btn icon-btn" type="button" aria-label="喜欢" title="喜欢">
+          <iconify-icon icon="line-md:heart-filled" aria-hidden="true"></iconify-icon>
+        </button>
+      </div>
+    </article>
+  </template>
+
+  <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

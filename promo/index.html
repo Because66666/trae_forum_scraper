@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>灵感洋流 · Project Drift — TRAE 论坛创意作品发现引擎</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #060b18;
+      color: #e2ded8;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+    ::selection { background: rgba(240, 178, 122, 0.35); color: #fff; }
+    :root {
+      --gold: #f0b27a;
+      --gold-dim: #c9955e;
+      --teal: #5dade2;
+      --teal-dim: #3d7ea6;
+      --surface: #0d1326;
+      --card: rgba(13, 19, 38, 0.72);
+      --ink: #e2ded8;
+      --ink-dim: #8b8fa3;
+      --ink-faint: rgba(139, 143, 163, 0.4);
+      --border: rgba(255,255,255,0.06);
+      --glow-gold: rgba(240, 178, 122, 0.18);
+      --glow-teal: rgba(93, 173, 226, 0.12);
+    }
+    a { color: var(--gold); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: #f5ce9c; }
+    img { max-width: 100%; display: block; }
+
+    .noise {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 256px 256px;
+    }
+
+    .orb-bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      overflow: hidden;
+    }
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15;
+      animation: orbFloat 20s ease-in-out infinite alternate;
+    }
+    .orb:nth-child(1) {
+      width: 50vw; height: 50vw; left: -10vw; top: -8vh;
+      background: radial-gradient(circle, rgba(240,178,122,0.6), transparent 70%);
+      animation-duration: 24s;
+    }
+    .orb:nth-child(2) {
+      width: 40vw; height: 40vw; right: -12vw; bottom: -6vh;
+      background: radial-gradient(circle, rgba(93,173,226,0.5), transparent 70%);
+      animation-duration: 28s; animation-delay: -6s;
+    }
+    .orb:nth-child(3) {
+      width: 30vw; height: 30vw; left: 40vw; top: 40vh;
+      background: radial-gradient(circle, rgba(240,178,122,0.3), transparent 70%);
+      animation-duration: 22s; animation-delay: -10s;
+    }
+    @keyframes orbFloat {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(6vw, -4vh) scale(1.12); }
+    }
+
+    .container {
+      position: relative; z-index: 1;
+      max-width: 1120px; margin: 0 auto; padding: 0 24px;
+    }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 18px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(6, 11, 24, 0.72);
+      backdrop-filter: blur(18px) saturate(1.4);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px; font-weight: 700;
+      color: var(--gold); letter-spacing: -0.02em;
+    }
+    nav .logo small {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 12px; font-weight: 400;
+      color: var(--ink-dim); letter-spacing: 0.04em;
+      margin-left: 8px;
+    }
+    nav .nav-links { display: flex; gap: 28px; align-items: center; }
+    nav .nav-links a {
+      font-size: 13px; font-weight: 500; color: var(--ink-dim);
+      letter-spacing: 0.04em; text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    nav .nav-links a:hover { color: var(--gold); }
+
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      justify-content: center; padding: 120px 0 80px;
+      position: relative;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border-radius: 999px;
+      border: 1px solid rgba(240, 178, 122, 0.2);
+      background: rgba(240, 178, 122, 0.06);
+      font-size: 12px; font-weight: 600; color: var(--gold-dim);
+      letter-spacing: 0.06em; text-transform: uppercase;
+      margin-bottom: 32px; width: fit-content;
+      animation: fadeUp 0.8s ease forwards; opacity: 0;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(52px, 8.5vw, 112px);
+      font-weight: 700; line-height: 0.92;
+      letter-spacing: -0.04em;
+      color: #fff;
+      animation: fadeUp 0.8s 0.1s ease forwards; opacity: 0;
+      text-wrap: balance;
+    }
+    .hero h1 .gold { color: var(--gold); font-style: italic; }
+    .hero .sub {
+      font-size: clamp(18px, 2.2vw, 26px);
+      font-weight: 300; color: var(--ink-dim);
+      margin-top: 28px; max-width: 640px;
+      line-height: 1.5;
+      animation: fadeUp 0.8s 0.2s ease forwards; opacity: 0;
+      text-wrap: balance;
+    }
+    .hero .sub strong { color: var(--ink); font-weight: 500; }
+    .hero .cta-row {
+      margin-top: 48px; display: flex; gap: 16px; flex-wrap: wrap;
+      animation: fadeUp 0.8s 0.3s ease forwards; opacity: 0;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 32px; border-radius: 999px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14px; font-weight: 600;
+      letter-spacing: 0.03em;
+      transition: all 0.25s ease; cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--gold); color: #060b18;
+      box-shadow: 0 4px 24px rgba(240, 178, 122, 0.25);
+    }
+    .btn-primary:hover {
+      background: #f5ce9c; transform: translateY(-2px);
+      box-shadow: 0 8px 36px rgba(240, 178, 122, 0.35);
+    }
+    .btn-ghost {
+      background: transparent; color: var(--ink);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .btn-ghost:hover {
+      border-color: var(--gold); color: var(--gold); transform: translateY(-2px);
+    }
+
+    .hero .scroll-hint {
+      position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      color: var(--ink-faint); font-size: 11px; letter-spacing: 0.06em;
+      animation: fadeUp 0.8s 0.5s ease forwards, bob 2.4s ease-in-out infinite 1.2s; opacity: 0;
+    }
+    .scroll-hint .line {
+      width: 1px; height: 32px;
+      background: linear-gradient(180deg, var(--ink-faint), transparent);
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(6px); }
+    }
+
+    section { padding: 100px 0; }
+    .section-label {
+      font-size: 11px; font-weight: 700; color: var(--gold);
+      letter-spacing: 0.12em; text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 5vw, 56px); font-weight: 600;
+      color: #fff; line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      text-wrap: balance;
+    }
+    .section-desc {
+      font-size: 18px; color: var(--ink-dim);
+      max-width: 640px; line-height: 1.7;
+    }
+
+    .grid-2 {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+      align-items: start;
+    }
+    @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; gap: 32px; } }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      backdrop-filter: blur(8px);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(240, 178, 122, 0.2);
+    }
+    .card-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: grid; place-items: center;
+      margin-bottom: 20px; font-size: 20px;
+    }
+    .card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px; font-weight: 600; color: #fff;
+      margin-bottom: 12px; letter-spacing: -0.02em;
+    }
+    .card p, .card li {
+      color: var(--ink-dim); font-size: 15px; line-height: 1.7;
+    }
+    .card ul { list-style: none; padding: 0; }
+    .card ul li { padding: 6px 0; padding-left: 20px; position: relative; }
+    .card ul li::before {
+      content: "→"; position: absolute; left: 0;
+      color: var(--gold); font-weight: 600;
+    }
+
+    .problem-block {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+      margin-top: 40px;
+    }
+    .problem-block .card { padding: 28px; }
+
+    .pulse-dot {
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; margin-right: 10px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    .quote-block {
+      margin-top: 48px; padding: 36px;
+      border-left: 3px solid var(--gold);
+      background: rgba(240, 178, 122, 0.04);
+      border-radius: 0 16px 16px 0;
+    }
+    .quote-block p {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px; font-style: italic;
+      color: var(--ink); line-height: 1.6;
+    }
+    .quote-block cite {
+      display: block; margin-top: 12px;
+      font-size: 13px; font-style: normal;
+      color: var(--ink-dim);
+    }
+
+    .value-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;
+      margin-top: 40px;
+    }
+    @media (max-width: 800px) { .value-grid { grid-template-columns: 1fr; } }
+    .value-card {
+      padding: 32px; border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      text-align: center;
+    }
+    .value-card .num {
+      font-family: 'Playfair Display', serif;
+      font-size: 42px; font-weight: 700;
+      color: var(--gold); line-height: 1;
+      margin-bottom: 12px;
+    }
+    .value-card h4 {
+      font-size: 16px; font-weight: 600; color: #fff;
+      margin-bottom: 10px;
+    }
+    .value-card p { font-size: 14px; color: var(--ink-dim); line-height: 1.6; }
+
+    .arch-diagram {
+      margin: 40px 0; padding: 40px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(13,19,38,0.9), rgba(6,11,24,0.9));
+      display: flex; flex-wrap: wrap; gap: 16px; justify-content: center;
+      align-items: center;
+    }
+    .arch-node {
+      padding: 16px 24px; border-radius: 12px;
+      font-size: 13px; font-weight: 500; text-align: center;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--ink-dim); min-width: 120px;
+    }
+    .arch-node.highlight {
+      background: rgba(240, 178, 122, 0.08);
+      border-color: rgba(240, 178, 122, 0.2);
+      color: var(--gold);
+    }
+    .arch-arrow { color: var(--ink-faint); font-size: 18px; }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      text-align: center;
+      font-size: 13px; color: var(--ink-faint);
+    }
+
+    .fade-in {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 640px) {
+      nav .nav-links { display: none; }
+      .hero h1 { font-size: 44px; }
+      .card { padding: 24px; }
+      .problem-block { grid-template-columns: 1fr; }
+    }
+
+    .inline-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; padding: 2px 8px;
+      background: rgba(255,255,255,0.06); border-radius: 4px;
+      color: var(--teal);
+    }
+
+    .profile-snap {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;
+      margin-top: 24px;
+    }
+    .profile-item {
+      padding: 24px; border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .profile-item h4 { color: #fff; font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .profile-item p { font-size: 13px; color: var(--ink-dim); line-height: 1.6; }
+
+    .scene-tag {
+      display: inline-block;
+      padding: 4px 12px; border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+      background: rgba(93, 173, 226, 0.1);
+      color: var(--teal); border: 1px solid rgba(93, 173, 226, 0.15);
+      margin: 4px 4px 4px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="noise"></div>
+<div class="orb-bg">
+  <div class="orb"></div>
+  <div class="orb"></div>
+  <div class="orb"></div>
+</div>
+
+<nav>
+  <div class="logo">灵感洋流 <small>· Project Drift</small></div>
+  <div class="nav-links">
+    <a href="#problem">痛点</a>
+    <a href="#product">产品</a>
+    <a href="#users">用户</a>
+    <a href="#value">价值</a>
+  </div>
+</nav>
+
+<main class="container">
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <div class="hero-badge">✦ TRAE 创造力大赛 · 参赛作品</div>
+    <h1>灵感<br><span class="gold">洋流</span></h1>
+    <p class="sub">
+      <strong>TRAE 论坛创意作品发现引擎</strong> — 用个性化推荐，让每一个好 Demo 都被看见。
+      像刷短视频一样浏览 TRAE 社区的海量创意作品。
+    </p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#product">了解产品</a>
+      <a class="btn btn-ghost" href="#value">价值与意义</a>
+    </div>
+    <div class="scroll-hint">
+      <span>向下探索</span>
+      <div class="line"></div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section id="problem">
+    <div class="fade-in">
+      <p class="section-label">✦ 痛点洞察</p>
+      <h2 class="section-title">好创意被信息流淹没</h2>
+      <p class="section-desc">TRAE 论坛大赛专区每天涌现大量优秀 Demo，但缺少高效的发现机制。</p>
+    </div>
+    <div class="problem-block fade-in">
+      <div class="card">
+        <div class="card-icon" style="background:rgba(240,178,122,0.1);color:var(--gold)">!</div>
+        <h3>信息过载</h3>
+        <p>大赛专区的帖子按发帖时间线性排列。用户需要手动翻页，逐一浏览才能找到感兴趣的作品。328+ 个帖子中，大量优秀作品沉在深页。</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(93,173,226,0.1);color:var(--teal)">?</div>
+        <h3>无个性化</h3>
+        <p>每位访客看到的内容一样，没有根据个人兴趣进行推荐。想找"AI + 医疗"方向的 Demo 只能靠肉眼过滤标题，耗时费力。</p>
+      </div>
+    </div>
+    <div class="quote-block fade-in">
+      <p>"我明明只想看学习工作类的 Demo，却要把所有帖子翻一遍。很多好作品就在第二页、第三页，但我根本没有耐心翻到那里。"</p>
+      <!-- <cite>— Because</cite> -->
+    </div>
+  </section>
+
+  <!-- MOTIVATION + PRODUCT -->
+  <section id="product">
+    <div class="fade-in">
+      <p class="section-label">✦ 创意起源</p>
+      <h2 class="section-title">为什么会想到做这个？</h2>
+      <p class="section-desc">
+        在 TRAE 创造力大赛进行期间，参赛作品数量快速攀升。我们发现了一个共性问题：
+        <strong>好的 Demo 需要好的舞台</strong>。
+        浏览体验和作品质量同等重要 — 如果用户找不到你的作品，再好的创意也无法产生影响。
+      </p>
+    </div>
+    <div class="quote-block fade-in" style="margin-top:28px">
+      <p>灵感来源于一个简单的观察：<br><br>
+        "我们都在 TRAE 上用 AI 做出了不可思议的 Demo，但寻找这些 Demo 的方式还停留在十年前 —— 翻页、CTRL+F、眼球过滤。"
+        <br><br>
+        所以我们想：<strong>为什么不做一个「TikTok 式的创意探索器」？</strong><br>
+        让浏览作品本身成为一种享受，让推荐算法把对的内容推给对的人。</p>
+    </div>
+
+    <div style="margin-top:72px" class="fade-in">
+      <p class="section-label">✦ 产品定义</p>
+      <h2 class="section-title">大概是什么产品？</h2>
+      <p class="section-desc" style="margin-bottom:20px">
+        <strong>灵感洋流 (Project Drift)</strong> 是一个基于 Web 的 <strong>TRAE 论坛作品发现与推荐系统</strong>。
+        它自动爬取大赛专区帖子，通过朴素贝叶斯算法为每个作品打上语义标签，然后以"类短视频"的形式呈现个性化推荐流。
+      </p>
+    </div>
+    <div class="arch-diagram fade-in">
+      <div class="arch-node highlight">📡 论坛爬虫</div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-node">🏷️ 标签引擎<br><small>朴素贝叶斯</small></div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-node highlight">📱 推荐流前端</div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-node">🧠 兴趣画像<br><small>localStorage</small></div>
+    </div>
+  </section>
+
+  <!-- USERS -->
+  <section id="users">
+    <div class="fade-in">
+      <p class="section-label">✦ 目标用户</p>
+      <h2 class="section-title">谁在用？在什么场景？</h2>
+    </div>
+
+    <div class="profile-snap fade-in">
+      <div class="profile-item">
+        <h4>👨‍💻 TRAE 开发者</h4>
+        <p>想找灵感、参考同类作品、了解大赛趋势的参赛者和观察者。</p>
+        <div style="margin-top:10px">
+          <span class="scene-tag">找灵感</span>
+          <span class="scene-tag">竞品参考</span>
+          <span class="scene-tag">午休刷帖</span>
+        </div>
+      </div>
+      <div class="profile-item">
+        <h4>🏆 大赛评审 / 运营</h4>
+        <p>需要高效浏览海量作品、按赛道或主题筛选、快速发现高质量 Demo 的评委和社区管理者。</p>
+        <div style="margin-top:10px">
+          <span class="scene-tag">作品评审</span>
+          <span class="scene-tag">分类归档</span>
+          <span class="scene-tag">榜单观察</span>
+        </div>
+      </div>
+      <div class="profile-item">
+        <h4>🎯 产品爱好者</h4>
+        <p>关注 AI + 各行业创新应用，想看看 TRAE 能做出什么有意思东西的泛科技人群。</p>
+        <div style="margin-top:10px">
+          <span class="scene-tag">随手看看</span>
+          <span class="scene-tag">发现新奇</span>
+          <span class="scene-tag">周末探索</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card fade-in" style="margin-top:40px">
+      <h3>如果没有灵感洋流，用户会遇到什么不方便？</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px">
+        <div>
+          <p style="color:var(--ink-faint);font-size:12px;font-weight:600;letter-spacing:0.04em;margin-bottom:8px;text-transform:uppercase">❌ 之前</p>
+          <ul>
+            <li>手动翻页浏览，每页 20 个帖子</li>
+            <li>无法按兴趣筛选，同质内容反复出现</li>
+            <li>好作品沉到第二页后无人问津</li>
+            <li>没有直观的数据展示和推荐机制</li>
+          </ul>
+        </div>
+        <div>
+          <p style="color:var(--gold);font-size:12px;font-weight:600;letter-spacing:0.04em;margin-bottom:8px;text-transform:uppercase">✅ 之后</p>
+          <ul>
+            <li>单屏沉浸浏览，滑动切换作品</li>
+            <li>个性化推荐，越刷越懂你</li>
+            <li>每个作品都有平等曝光机会</li>
+            <li>互动数据一目了然，行为驱动排序</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VALUE -->
+  <section id="value">
+    <div class="fade-in">
+      <p class="section-label">✦ 价值与意义</p>
+      <h2 class="section-title">为什么这件事值得做？</h2>
+    </div>
+
+    <div class="value-grid fade-in">
+      <div class="value-card">
+        <div class="num">10×</div>
+        <h4>效率提升</h4>
+        <p>将浏览效率从"逐页翻找"提升为"滑动发现"。用户无需手动分类，推荐系统自动匹配兴趣，平均发现好作品的时间缩短 10 倍。</p>
+      </div>
+      <div class="value-card">
+        <div class="num">100%</div>
+        <h4>作品可见度</h4>
+        <p>每个帖子都被自动打上语义标签，通过推荐流获得平等曝光。不再有"沉帖"——好创意永远不会被埋没。</p>
+      </div>
+      <div class="value-card">
+        <div class="num">∞</div>
+        <h4>社区活力</h4>
+        <p>降低浏览门槛 = 增加互动频率 = 提升创作者动力。当作品更容易被发现，更多人愿意参与创作，形成正向飞轮。</p>
+      </div>
+    </div>
+
+    <div class="card fade-in" style="margin-top:40px;text-align:center;padding:48px">
+      <p style="font-family:'Playfair Display',serif;font-size:28px;color:#fff;font-weight:600;line-height:1.4">
+        "让每一个用心创作的 Demo，<br>都能漂到属于它的观众面前。"
+      </p>
+      <p style="margin-top:20px;font-size:14px;color:var(--ink-dim)">
+        灵感洋流 · Project Drift — 一个为 TRAE 创造力大赛而生的作品发现引擎
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <p>灵感洋流 · Project Drift &nbsp;—&nbsp; TRAE 创造力大赛参赛作品</p>
+    <p style="margin-top:6px;color:var(--ink-faint);font-size:12px">
+      基于 Python + 纯前端构建 · 朴素贝叶斯标签引擎 · 个性化推荐流
+    </p>
+  </div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

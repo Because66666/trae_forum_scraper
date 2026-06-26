@@ -1,0 +1,15 @@
+{
+  "category_url": "https://forum.trae.cn/c/38-category/40-category/40",
+  "output_dir": "data",
+  "min_delay": 2.0,
+  "max_delay": 5.0,
+  "timeout": 30,
+  "max_retries": 3,
+  "download_images": false,
+  "skip_official": true,
+  "official_usernames": [
+    "TRAE-小阳",
+    "博士哥",
+    "汤圆"
+  ]
+}
