@@ -1,6 +1,5 @@
 import argparse
 import json
-import re
 from pathlib import Path
 from typing import Any
 
@@ -9,16 +8,6 @@ from tag_builder import build_and_tag
 PROJECT_DIR = Path(__file__).resolve().parent
 DEFAULT_INPUT_DIR = PROJECT_DIR / "data"
 DEFAULT_APP_DATA_PATH = PROJECT_DIR / "app" / "data" / "posts.json"
-
-_AK_PATTERN = re.compile(r"q-ak=[^&]+|q-signature=[^&]+|q-key-time=[^&]+|q-sign-time=[^&]+", re.IGNORECASE)
-
-
-def sanitize_image_url(url: str) -> str:
-    stripped = _AK_PATTERN.sub("", url)
-    stripped = re.sub(r"&{2,}", "&", stripped)
-    stripped = re.sub(r"\?&+", "?", stripped)
-    stripped = stripped.rstrip("?& ")
-    return stripped if stripped else url
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -59,8 +48,6 @@ def merge_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def normalize_post(post: dict[str, Any]) -> dict[str, Any]:
     text = str(post.get("text") or "")
     summary = "\n".join(text.splitlines()[:12])
-    images = post.get("images") or []
-    links = post.get("links") or []
     return {
         "topic_id": post.get("topic_id"),
         "title": post.get("title"),
@@ -74,8 +61,8 @@ def normalize_post(post: dict[str, Any]) -> dict[str, Any]:
         "reply_count": post.get("reply_count") or 0,
         "text": text,
         "summary": summary,
-        "links": [{"href": sanitize_image_url(item.get("href", "")), "text": item.get("text", "")} for item in links],
-        "images": [{"src": sanitize_image_url(item.get("src", "")), "alt": item.get("alt", ""), "title": item.get("title", "")} for item in images],
+        "links": post.get("links") or [],
+        "images": post.get("images") or [],
     }
 
 
