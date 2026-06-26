@@ -7,7 +7,9 @@ from tag_builder import build_and_tag
 
 PROJECT_DIR = Path(__file__).resolve().parent
 DEFAULT_INPUT_DIR = PROJECT_DIR / "data"
-DEFAULT_APP_DATA_PATH = PROJECT_DIR / "app" / "data" / "posts.json"
+APP_DATA_DIR = PROJECT_DIR / "app" / "data"
+CHUNK_SIZE = 100
+PARALLEL_CHUNKS = 5
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -66,7 +68,30 @@ def normalize_post(post: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build(input_dir: Path, output_path: Path) -> int:
+def write_chunks(normalized: list[dict[str, Any]], output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    chunk_count = (len(normalized) + CHUNK_SIZE - 1) // CHUNK_SIZE
+    chunk_files: list[str] = []
+    for i in range(chunk_count):
+        start = i * CHUNK_SIZE
+        end = start + CHUNK_SIZE
+        chunk_data = normalized[start:end]
+        filename = f"posts_{i}.json"
+        (output_dir / filename).write_text(json.dumps(chunk_data, ensure_ascii=False), encoding="utf-8")
+        chunk_files.append(filename)
+    manifest = {
+        "total": len(normalized),
+        "chunkCount": chunk_count,
+        "chunkSize": CHUNK_SIZE,
+        "chunks": chunk_files,
+    }
+    manifest_path = output_dir / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"[ChunkedOutput] {len(normalized)} posts -> {chunk_count} chunks ({chunk_files[0]}...{chunk_files[-1]})")
+    return manifest_path
+
+
+def build(input_dir: Path, output_dir: Path) -> int:
     rows = merge_rows(read_jsonl(input_dir / "index.jsonl") + collect_from_posts(input_dir / "posts"))
     valid = [r for r in rows if r.get("topic_id") and r.get("title")]
     if not valid:
@@ -74,21 +99,20 @@ def build(input_dir: Path, output_path: Path) -> int:
         return 0
     tagged = build_and_tag(valid)
     normalized = [normalize_post(row) for row in tagged]
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(normalized, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_chunks(normalized, output_dir)
     return len(normalized)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="将爬虫输出转换为前端可加载的 posts.json，并自动构建标签")
+    parser = argparse.ArgumentParser(description="将爬虫输出转换为前端可加载的分片数据，并自动构建标签")
     parser.add_argument("--input-dir", help=f"爬虫输出目录（默认 {DEFAULT_INPUT_DIR}）")
-    parser.add_argument("--output", help=f"前端数据输出路径（默认 {DEFAULT_APP_DATA_PATH}）")
+    parser.add_argument("--output-dir", help=f"前端数据输出目录（默认 {APP_DATA_DIR}）")
     parser.add_argument("--rebuild-vocab", action="store_true", help="强制重新构建标签词库")
     args = parser.parse_args()
     input_dir = Path(args.input_dir) if args.input_dir else DEFAULT_INPUT_DIR
-    output_path = Path(args.output) if args.output else DEFAULT_APP_DATA_PATH
-    count = build(input_dir, output_path)
-    print(json.dumps({"posts": count, "input": str(input_dir), "output": str(output_path)}, ensure_ascii=False, indent=2))
+    output_dir = Path(args.output_dir) if args.output_dir else APP_DATA_DIR
+    count = build(input_dir, output_dir)
+    print(json.dumps({"posts": count, "input": str(input_dir), "output": str(output_dir)}, ensure_ascii=False, indent=2))
     return 0
 
 

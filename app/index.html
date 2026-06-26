@@ -9,6 +9,27 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div id="loadingOverlay" class="loading-overlay" aria-label="加载中">
+    <div class="loading-content">
+      <div class="loading-icon">
+        <svg viewBox="0 0 60 60" width="60" height="60" fill="none">
+          <circle cx="30" cy="30" r="26" stroke="rgba(216,135,69,0.2)" stroke-width="3"/>
+          <circle class="loading-ring" cx="30" cy="30" r="26" stroke="#d88745" stroke-width="3"
+            stroke-linecap="round" stroke-dasharray="163.36" stroke-dashoffset="130"
+            transform="rotate(-90 30 30)"/>
+          <path class="loading-drift" d="M18 34c3-6 8-4 12-2s9 4 12-2" stroke="#d88745" stroke-width="2.2"
+            stroke-linecap="round" fill="none"/>
+        </svg>
+      </div>
+      <p class="loading-title">灵感洋流</p>
+      <p class="loading-sub">正在汇聚创意作品…</p>
+      <div class="progress-track">
+        <div id="progressBar" class="progress-bar" style="width:0%"></div>
+      </div>
+      <p id="progressText" class="progress-text">0 / 0</p>
+    </div>
+  </div>
+
   <a class="skip-link" href="#feed">跳到项目内容</a>
   <div class="ambient ambient-a"></div>
   <div class="ambient ambient-b"></div>

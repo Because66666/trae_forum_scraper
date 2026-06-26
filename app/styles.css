@@ -575,6 +575,91 @@ h1 {
   }
 }
 
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, #f7ead9 0%, #efe2cc 60%, #e8d5ba 100%);
+  opacity: 1;
+  transition: opacity 480ms ease, backdrop-filter 480ms ease;
+}
+
+.loading-overlay.loading-done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-content {
+  display: grid;
+  place-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.loading-icon {
+  margin-bottom: 8px;
+}
+
+.loading-ring {
+  animation: ring-spin 1.6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.loading-drift {
+  animation: drift-sway 2.4s ease-in-out infinite;
+}
+
+@keyframes ring-spin {
+  0% { stroke-dashoffset: 130; transform: rotate(0deg); }
+  50% { stroke-dashoffset: 30; transform: rotate(180deg); }
+  100% { stroke-dashoffset: 130; transform: rotate(360deg); }
+}
+
+@keyframes drift-sway {
+  0%, 100% { d: path("M18 34c3-6 8-4 12-2s9 4 12-2"); }
+  50% { d: path("M18 34c3-4 8-7 12-4s9 2 12-5"); }
+}
+
+.loading-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #2f241c;
+  margin: 0;
+}
+
+.loading-sub {
+  font-size: 15px;
+  color: rgba(47,36,28,0.6);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.progress-track {
+  width: 220px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(216,135,69,0.15);
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #d88745, #c47a3a);
+  transition: width 260ms ease;
+}
+
+.progress-text {
+  font-size: 13px;
+  color: rgba(47,36,28,0.45);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
 @media (orientation: landscape) and (min-width: 1120px) {
   .shell {
     padding: clamp(18px, 2.5vh, 32px) clamp(24px, 3vw, 56px);

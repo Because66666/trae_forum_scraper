@@ -15,34 +15,91 @@ const state = {
   isTransitioning: false,
 };
 
+const PARALLEL_LOAD = 5;
+
 const feed = document.querySelector('#feed');
 const template = document.querySelector('#postTemplate');
 const nextBtn = document.querySelector('#nextBtn');
 const prevBtn = document.querySelector('#prevBtn');
 const resetBtn = document.querySelector('#resetBtn');
+const loadingOverlay = document.querySelector('#loadingOverlay');
+const progressBar = document.querySelector('#progressBar');
+const progressText = document.querySelector('#progressText');
 
 init();
 
 async function init() {
-  try {
-    const response = await fetch('data/posts.json', { cache: 'no-store' });
-    if (!response.ok) throw new Error(`无法读取 data/posts.json：${response.status}`);
-    state.posts = await response.json();
-  } catch (error) {
-    renderEmpty(`还没有可展示的数据。请先运行爬虫，再执行 python build_app_data.py。${error.message}`);
-    return;
-  }
-
+  await loadPostsWithProgress();
   if (!Array.isArray(state.posts) || state.posts.length === 0) {
     renderEmpty('posts.json 为空。请先抓取一些产品帖。');
+    hideLoadingImmediate();
     return;
   }
-
+  await transitionOutLoading();
   reorderFeed();
   const firstIndex = randomInteger(state.posts.length);
   state.currentIndex = firstIndex;
   showPost(firstIndex, { reason: 'initial_random', direction: 1, sequence: 1 });
   bindEvents();
+}
+
+async function loadPostsWithProgress() {
+  try {
+    const manifestRes = await fetch('data/manifest.json', { cache: 'no-store' });
+    if (manifestRes.ok) {
+      const manifest = await manifestRes.json();
+      const chunkFiles = manifest.chunks;
+      const total = manifest.total;
+      updateProgress(0, total);
+      const loaded = [];
+      let loadedCount = 0;
+      for (let i = 0; i < chunkFiles.length; i += PARALLEL_LOAD) {
+        const batch = chunkFiles.slice(i, i + PARALLEL_LOAD);
+        const batchResults = await Promise.all(
+          batch.map(async (file) => {
+            const res = await fetch(`data/${file}`, { cache: 'no-store' });
+            if (!res.ok) throw new Error(`无法读取 ${file}：${res.status}`);
+            const data = await res.json();
+            return { data, file };
+          })
+        );
+        for (const result of batchResults) {
+          loaded.push(...result.data);
+          loadedCount += result.data.length;
+          updateProgress(loadedCount, total);
+        }
+      }
+      state.posts = loaded;
+      return;
+    }
+  } catch {
+    // fallback to legacy single file
+  }
+  const response = await fetch('data/posts.json', { cache: 'no-store' });
+  if (!response.ok) throw new Error(`无法读取 data/posts.json：${response.status}`);
+  state.posts = await response.json();
+  updateProgress(state.posts.length, state.posts.length);
+}
+
+function updateProgress(current, total) {
+  const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+  progressBar.style.width = `${pct}%`;
+  progressText.textContent = `${current.toLocaleString()} / ${total.toLocaleString()}`;
+}
+
+function hideLoadingImmediate() {
+  if (loadingOverlay) loadingOverlay.style.display = 'none';
+}
+
+function transitionOutLoading() {
+  return new Promise(resolve => {
+    if (!loadingOverlay) return resolve();
+    loadingOverlay.classList.add('loading-done');
+    window.setTimeout(() => {
+      loadingOverlay.style.display = 'none';
+      resolve();
+    }, 520);
+  });
 }
 
 function bindEvents() {
@@ -423,7 +480,7 @@ function buildPreferenceKeys(post) {
 function normalizeKeywordText(value) {
   return String(value || '')
     .replace(/【[^】]*(赛道|大赛|报名专区)[^】]*】/g, ' ')
-    .replace(/[\[\]【】（）()《》<>#:_·—\-+|,，。！？!?.、/\\]/g, ' ')
+    .replace(/[\[\]【】（）()《》<>:#_·—\-+|,，。！？!?.、/\\]/g, ' ')
     .replace(/\b(demo|trae|ai)\b/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();

@@ -1,0 +1,66 @@
+name: 每日自动爬取
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  crawl-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检查是否已过期（截止 2026-07-16 09:00 CST）
+        id: check_deadline
+        run: |
+          DEADLINE="2026-07-16 09:00"
+          NOW=$(date +"%Y-%m-%d %H:%M")
+          if [[ "$NOW" > "$DEADLINE" ]]; then
+            echo "已过截止时间 $DEADLINE，当前时间 $NOW，跳过执行"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 检出仓库
+        if: steps.check_deadline.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 设置 Python 3.12
+        if: steps.check_deadline.outputs.skip != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装依赖
+        if: steps.check_deadline.outputs.skip != 'true'
+        run: pip install -r requirements.txt
+
+      - name: 运行爬虫
+        if: steps.check_deadline.outputs.skip != 'true'
+        run: python scrape_trae_forum.py --crawl-all --config config.example.json --min-delay 5 --max-delay 12
+
+      - name: 构建前端数据
+        if: steps.check_deadline.outputs.skip != 'true'
+        run: python build_app_data.py
+
+      - name: 提交并推送更新
+        if: steps.check_deadline.outputs.skip != 'true'
+        run: |
+          git config user.name "trae-forum-bot"
+          git config user.email "bot@trae-forum-scraper"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git add app/data/ scrape_trae_forum.py tag_builder.py build_app_data.py tag_vocabulary.json
+          if git diff --cached --quiet; then
+            echo "没有新数据变更，跳过提交"
+          else
+            git commit -m "chore: 每日自动爬取更新 $(date +'%Y-%m-%d %H:%M')"
+            git push origin HEAD:${{ github.ref }}
+          fi
