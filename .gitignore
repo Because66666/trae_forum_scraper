@@ -20,6 +20,9 @@ config.json
 # 标签模型缓存（可重新生成）
 tag_vocabulary.json
 
+# 根级背景图（app/background.png 是重复文件）
+/background.png
+
 # 系统
 Thumbs.db
 .DS_Store
